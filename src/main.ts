@@ -1,10 +1,10 @@
 import { MarkdownView, Notice, Plugin, TFile, requestUrl } from 'obsidian';
 
-import { BookSearchModal } from '@views/book_search_modal';
-import { BookSuggestModal } from '@views/book_suggest_modal';
+import { LegoSearchModal } from '@views/book_search_modal';
+import { LegoSuggestModal } from '@views/book_suggest_modal';
 import { CursorJumper } from '@utils/cursor_jumper';
-import { Book } from '@models/book.model';
-import { BookSearchSettingTab, BookSearchPluginSettings, DEFAULT_SETTINGS } from '@settings/settings';
+import { LegoSet } from '@models/lego.model';
+import { LegoSearchSettingTab, LegoSearchPluginSettings, DEFAULT_SETTINGS } from '@settings/settings';
 import {
   getTemplateContents,
   applyTemplateTransformations,
@@ -13,34 +13,34 @@ import {
 } from '@utils/template';
 import { replaceVariableSyntax, makeFileName, applyDefaultFrontMatter, toStringFrontMatter } from '@utils/utils';
 
-export default class BookSearchPlugin extends Plugin {
-  settings: BookSearchPluginSettings;
+export default class LegoSearchPlugin extends Plugin {
+  settings: LegoSearchPluginSettings;
 
   async onload() {
     await this.loadSettings();
 
     // This creates an icon in the left ribbon.
-    const ribbonIconEl = this.addRibbonIcon('book', 'Create new book note', () => this.createNewBookNote());
+    const ribbonIconEl = this.addRibbonIcon('blocks', 'Create new LEGO set note', () => this.createNewLegoNote());
     // Perform additional things with the ribbon
-    ribbonIconEl.addClass('obsidian-book-search-plugin-ribbon-class');
+    ribbonIconEl.addClass('obsidian-lego-search-plugin-ribbon-class');
 
     // This adds a simple command that can be triggered anywhere
     this.addCommand({
-      id: 'open-book-search-modal',
-      name: 'Create new book note',
-      callback: () => this.createNewBookNote(),
+      id: 'open-lego-search-modal',
+      name: 'Create new LEGO set note',
+      callback: () => this.createNewLegoNote(),
     });
 
     this.addCommand({
-      id: 'open-book-search-modal-to-insert',
+      id: 'open-lego-search-modal-to-insert',
       name: 'Insert the metadata',
       callback: () => this.insertMetadata(),
     });
 
     // This adds a settings tab so the user can configure various aspects of the plugin
-    this.addSettingTab(new BookSearchSettingTab(this.app, this));
+    this.addSettingTab(new LegoSearchSettingTab(this.app, this));
 
-    console.log(`Book Search: version ${this.manifest.version} (requires obsidian ${this.manifest.minAppVersion})`);
+    console.log(`LEGO Set Search: version ${this.manifest.version} (requires obsidian ${this.manifest.minAppVersion})`);
   }
 
   showNotice(message: unknown) {
@@ -51,13 +51,13 @@ export default class BookSearchPlugin extends Plugin {
     }
   }
 
-  // open modal for book search
-  async searchBookMetadata(query?: string): Promise<Book> {
-    const searchedBooks = await this.openBookSearchModal(query);
-    return await this.openBookSuggestModal(searchedBooks);
+  // open modal for LEGO set search
+  async searchLegoSetMetadata(query?: string): Promise<LegoSet> {
+    const searchedSets = await this.openLegoSearchModal(query);
+    return await this.openLegoSuggestModal(searchedSets);
   }
 
-  async getRenderedContents(book: Book) {
+  async getRenderedContents(legoSet: LegoSet) {
     const {
       templateFile,
       useDefaultFrontmatter,
@@ -71,25 +71,25 @@ export default class BookSearchPlugin extends Plugin {
     let contentBody = '';
 
     if (enableCoverImageSave) {
-      const coverImageUrl = book.coverLargeUrl || book.coverMediumUrl || book.coverSmallUrl || book.coverUrl;
-      if (coverImageUrl) {
-        const imageName = makeFileName(book, this.settings.fileNameFormat, 'jpg');
-        book.localCoverImage = await this.downloadAndSaveImage(imageName, coverImagePath, coverImageUrl);
+      const boxArtUrl = legoSet.set_img_url;
+      if (boxArtUrl) {
+        const imageName = makeFileName(legoSet, this.settings.fileNameFormat, 'jpg');
+        legoSet.localCoverImage = await this.downloadAndSaveImage(imageName, coverImagePath, boxArtUrl);
       }
     }
 
     if (templateFile) {
       const templateContents = await getTemplateContents(this.app, templateFile);
-      const replacedVariable = replaceVariableSyntax(book, applyTemplateTransformations(templateContents));
-      contentBody += executeInlineScriptsTemplates(book, replacedVariable);
+      const replacedVariable = replaceVariableSyntax(legoSet, applyTemplateTransformations(templateContents));
+      contentBody += executeInlineScriptsTemplates(legoSet, replacedVariable);
     } else {
-      let replacedVariableFrontmatter = replaceVariableSyntax(book, frontmatter); // @deprecated
+      let replacedVariableFrontmatter = replaceVariableSyntax(legoSet, frontmatter); // @deprecated
       if (useDefaultFrontmatter) {
         replacedVariableFrontmatter = toStringFrontMatter(
-          applyDefaultFrontMatter(book, replacedVariableFrontmatter, defaultFrontmatterKeyType),
+          applyDefaultFrontMatter(legoSet, replacedVariableFrontmatter, defaultFrontmatterKeyType),
         );
       }
-      const replacedVariableContent = replaceVariableSyntax(book, content);
+      const replacedVariableContent = replaceVariableSyntax(legoSet, content);
       contentBody += replacedVariableFrontmatter
         ? `---\n${replacedVariableFrontmatter}\n---\n${replacedVariableContent}`
         : replacedVariableContent;
@@ -101,7 +101,7 @@ export default class BookSearchPlugin extends Plugin {
   async downloadAndSaveImage(imageName: string, directory: string, imageUrl: string): Promise<string> {
     const { enableCoverImageSave } = this.settings;
     if (!enableCoverImageSave) {
-      console.warn('Cover image saving is not enabled.');
+      console.warn('Box art saving is not enabled.');
       return '';
     }
 
@@ -138,14 +138,14 @@ export default class BookSearchPlugin extends Plugin {
       }
 
       // TODO: Try using a search query on the selected text
-      const book = await this.searchBookMetadata(markdownView.file.basename);
+      const legoSet = await this.searchLegoSetMetadata(markdownView.file.basename);
 
       if (!markdownView.editor) {
         console.warn('Can not find editor from the active markdown view');
         return;
       }
 
-      const renderedContents = await this.getRenderedContents(book);
+      const renderedContents = await this.getRenderedContents(legoSet);
       markdownView.editor.replaceRange(renderedContents, { line: 0, ch: 0 });
     } catch (err) {
       console.warn(err);
@@ -153,27 +153,27 @@ export default class BookSearchPlugin extends Plugin {
     }
   }
 
-  async createNewBookNote(): Promise<void> {
+  async createNewLegoNote(): Promise<void> {
     try {
-      const book = await this.searchBookMetadata();
-      const renderedContents = await this.getRenderedContents(book);
+      const legoSet = await this.searchLegoSetMetadata();
+      const renderedContents = await this.getRenderedContents(legoSet);
 
       // TODO: If the same file exists, it asks if you want to overwrite it.
       // create new File
-      const fileName = makeFileName(book, this.settings.fileNameFormat);
+      const fileName = makeFileName(legoSet, this.settings.fileNameFormat);
       const filePath = `${this.settings.folder}/${fileName}`;
       const targetFile = await this.app.vault.create(filePath, renderedContents);
 
       // if use Templater plugin
       await useTemplaterPluginInFile(this.app, targetFile);
-      this.openNewBookNote(targetFile);
+      this.openNewLegoNote(targetFile);
     } catch (err) {
       console.warn(err);
       this.showNotice(err);
     }
   }
 
-  async openNewBookNote(targetFile: TFile) {
+  async openNewLegoNote(targetFile: TFile) {
     if (!this.settings.openPageOnCompletion) return;
 
     // open file
@@ -189,18 +189,18 @@ export default class BookSearchPlugin extends Plugin {
     await new CursorJumper(this.app).jumpToNextCursorLocation();
   }
 
-  async openBookSearchModal(query = ''): Promise<Book[]> {
+  async openLegoSearchModal(query = ''): Promise<LegoSet[]> {
     return new Promise((resolve, reject) => {
-      return new BookSearchModal(this, query, (error, results) => {
+      return new LegoSearchModal(this, query, (error, results) => {
         return error ? reject(error) : resolve(results);
       }).open();
     });
   }
 
-  async openBookSuggestModal(books: Book[]): Promise<Book> {
+  async openLegoSuggestModal(legoSets: LegoSet[]): Promise<LegoSet> {
     return new Promise((resolve, reject) => {
-      return new BookSuggestModal(this.app, this.settings.showCoverImageInSearch, books, (error, selectedBook) => {
-        return error ? reject(error) : resolve(selectedBook);
+      return new LegoSuggestModal(this.app, this.settings.showCoverImageInSearch, legoSets, (error, selectedSet) => {
+        return error ? reject(error) : resolve(selectedSet);
       }).open();
     });
   }

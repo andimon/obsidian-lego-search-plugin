@@ -1,4 +1,4 @@
-import { Book, FrontMatter } from '@models/book.model';
+import { LegoSet, FrontMatter } from '@models/lego.model';
 import { DefaultFrontmatterKeyType } from '@settings/settings';
 
 // == Format Syntax == //
@@ -14,29 +14,29 @@ export function isISBN(str: string) {
   return /^(97(8|9))?\d{9}(\d|X)$/.test(str);
 }
 
-export function makeFileName(book: Book, fileNameFormat?: string, extension = 'md') {
+export function makeFileName(legoSet: LegoSet, fileNameFormat?: string, extension = 'md') {
   let result;
   if (fileNameFormat) {
-    result = replaceVariableSyntax(book, replaceDateInString(fileNameFormat));
+    result = replaceVariableSyntax(legoSet, replaceDateInString(fileNameFormat));
   } else {
-    result = !book.author ? book.title : `${book.title} - ${book.author}`;
+    result = legoSet.name ? `${legoSet.set_num} - ${legoSet.name}` : legoSet.set_num;
   }
   return replaceIllegalFileNameCharactersInString(result) + `.${extension}`;
 }
 
-export function changeSnakeCase(book: Book) {
-  return Object.entries(book).reduce((acc, [key, value]) => {
+export function changeSnakeCase(legoSet: LegoSet) {
+  return Object.entries(legoSet).reduce((acc, [key, value]) => {
     acc[camelToSnakeCase(key)] = value;
     return acc;
   }, {});
 }
 
 export function applyDefaultFrontMatter(
-  book: Book,
+  legoSet: LegoSet,
   frontmatter: FrontMatter | string,
   keyType: DefaultFrontmatterKeyType = DefaultFrontmatterKeyType.snakeCase,
 ) {
-  const frontMater = keyType === DefaultFrontmatterKeyType.camelCase ? book : changeSnakeCase(book);
+  const frontMater = keyType === DefaultFrontmatterKeyType.camelCase ? legoSet : changeSnakeCase(legoSet);
 
   const extraFrontMatter = typeof frontmatter === 'string' ? parseFrontMatter(frontmatter) : frontmatter;
   for (const key in extraFrontMatter) {
@@ -51,16 +51,16 @@ export function applyDefaultFrontMatter(
   return frontMater as object;
 }
 
-export function replaceVariableSyntax(book: Book, text: string): string {
+export function replaceVariableSyntax(legoSet: LegoSet, text: string): string {
   if (!text?.trim()) {
     return '';
   }
 
-  const entries = Object.entries(book);
+  const entries = Object.entries(legoSet);
 
   return entries
     .reduce((result, [key, val = '']) => {
-      return result.replace(new RegExp(`{{${key}}}`, 'ig'), val);
+      return result.replace(new RegExp(`{{${key}}}`, 'ig'), val?.toString());
     }, text)
     .replace(/{{\w+}}/gi, '')
     .trim();

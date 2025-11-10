@@ -1,13 +1,14 @@
-import { Book } from '@models/book.model';
+import { LegoSet } from '@models/lego.model';
 import * as utils from './utils';
 
 jest.mock('@settings/settings', () => jest.fn());
 
 describe('util.js', () => {
-  const book: Book = {
-    title: '코스모스',
-    author: '칼 세이건',
-    authors: ['칼 세이건'],
+  const legoSet: LegoSet = {
+    set_num: '75192-1',
+    name: 'Millennium Falcon',
+    year: 2017,
+    num_parts: 7541,
   };
 
   it('replaceIllegalFileNameCharactersInString 1', () => {
@@ -23,30 +24,30 @@ describe('util.js', () => {
   });
 
   it('makeFileName 1', () => {
-    expect(utils.makeFileName(book)).toBe('코스모스 - 칼 세이건.md');
+    expect(utils.makeFileName(legoSet)).toBe('75192-1 - Millennium Falcon.md');
   });
 
   it('makeFileName 2', () => {
-    const newBook = {
-      ...book,
-      author: '',
+    const newSet = {
+      ...legoSet,
+      name: '',
     };
-    expect(utils.makeFileName(newBook)).toBe('코스모스.md');
+    expect(utils.makeFileName(newSet)).toBe('75192-1.md');
   });
 
   it('makeFileName 3', () => {
-    expect(utils.makeFileName(book, '{{author}}-{{title}}')).toBe('칼 세이건-코스모스.md');
+    expect(utils.makeFileName(legoSet, '{{set_num}}-{{name}}')).toBe('75192-1-Millennium Falcon.md');
   });
 
   it('makeFileName 4', () => {
-    expect(utils.makeFileName(book, '{{author}}-{{title}}')).toBe('칼 세이건-코스모스.md');
+    expect(utils.makeFileName(legoSet, '{{year}} {{name}}')).toBe('2017 Millennium Falcon.md');
   });
 
   it('makeFileName 5', () => {
-    const newBook = {
-      ...book,
-      title: '코스모스 : 창백한 푸른점',
+    const newSet = {
+      ...legoSet,
+      name: 'UCS Millennium Falcon : Star Wars',
     };
-    expect(utils.makeFileName(newBook, '{{title}} - {{author}}')).toBe('코스모스 창백한 푸른점 - 칼 세이건.md');
+    expect(utils.makeFileName(newSet, '{{name}} - {{set_num}}')).toBe('UCS Millennium Falcon Star Wars - 75192-1.md');
   });
 });

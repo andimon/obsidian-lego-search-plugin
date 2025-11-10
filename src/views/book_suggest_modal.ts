@@ -1,59 +1,59 @@
 import { App, SuggestModal } from 'obsidian';
-import { Book } from '@models/book.model';
+import { LegoSet } from '@models/lego.model';
 
-export class BookSuggestModal extends SuggestModal<Book> {
+export class LegoSuggestModal extends SuggestModal<LegoSet> {
   showCoverImageInSearch: boolean;
 
   constructor(
     app: App,
     showCoverImageInSearch: boolean,
-    private readonly suggestion: Book[],
-    private onChoose: (error: Error | null, result?: Book) => void,
+    private readonly suggestion: LegoSet[],
+    private onChoose: (error: Error | null, result?: LegoSet) => void,
   ) {
     super(app);
     this.showCoverImageInSearch = showCoverImageInSearch;
   }
 
   // Returns all available suggestions.
-  getSuggestions(query: string): Book[] {
-    return this.suggestion.filter(book => {
+  getSuggestions(query: string): LegoSet[] {
+    return this.suggestion.filter(legoSet => {
       const searchQuery = query?.toLowerCase();
       return (
-        book.title?.toLowerCase().includes(searchQuery) ||
-        book.author?.toLowerCase().includes(searchQuery) ||
-        book.publisher?.toLowerCase().includes(searchQuery)
+        legoSet.name?.toLowerCase().includes(searchQuery) ||
+        legoSet.set_num?.toLowerCase().includes(searchQuery) ||
+        legoSet.theme?.toLowerCase().includes(searchQuery)
       );
     });
   }
 
   // Renders each suggestion item.
-  renderSuggestion(book: Book, el: HTMLElement) {
-    el.addClass('book-suggestion-item');
+  renderSuggestion(legoSet: LegoSet, el: HTMLElement) {
+    el.addClass('lego-suggestion-item');
 
-    const coverImageUrl = book.coverLargeUrl || book.coverMediumUrl || book.coverSmallUrl || book.coverUrl;
+    const boxArtUrl = legoSet.set_img_url;
 
-    if (this.showCoverImageInSearch && coverImageUrl) {
+    if (this.showCoverImageInSearch && boxArtUrl) {
       el.createEl('img', {
-        cls: 'book-cover-image',
+        cls: 'lego-box-art-image',
         attr: {
-          src: coverImageUrl,
-          alt: `Cover Image for ${book.title}`,
+          src: boxArtUrl,
+          alt: `Box Art for ${legoSet.name}`,
         },
       });
     }
 
-    const textContainer = el.createEl('div', { cls: 'book-text-info' });
-    textContainer.createEl('div', { text: book.title });
+    const textContainer = el.createEl('div', { cls: 'lego-text-info' });
+    textContainer.createEl('div', { text: legoSet.name });
 
-    const publisher = book.publisher ? `, ${book.publisher}` : '';
-    const publishDate = book.publishDate ? `(${book.publishDate})` : '';
-    const totalPage = book.totalPage ? `, p${book.totalPage}` : '';
-    const subtitle = `${book.author}${publisher}${publishDate}${totalPage}`;
+    const theme = legoSet.theme ? `${legoSet.theme}` : '';
+    const year = legoSet.year ? `(${legoSet.year})` : '';
+    const pieces = legoSet.num_parts ? `, ${legoSet.num_parts} pieces` : '';
+    const subtitle = `${legoSet.set_num} - ${theme}${year}${pieces}`;
     textContainer.createEl('small', { text: subtitle });
   }
 
   // Perform action on the selected suggestion.
-  onChooseSuggestion(book: Book) {
-    this.onChoose(null, book);
+  onChooseSuggestion(legoSet: LegoSet) {
+    this.onChoose(null, legoSet);
   }
 }

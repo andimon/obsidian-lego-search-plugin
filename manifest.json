@@ -1,9 +1,9 @@
 {
-	"id": "obsidian-book-search-plugin",
-	"name": "Book Search",
-	"version": "0.7.5",
+	"id": "obsidian-lego-search-plugin",
+	"name": "LEGO Set Search",
+	"version": "0.8.0",
 	"minAppVersion": "0.15.0",
-	"description": "Helps you find books and create notes.",
+	"description": "Helps you find LEGO sets and create notes.",
 	"author": "anpigon",
 	"authorUrl": "https://github.com/anpigon",
 	"isDesktopOnly": false

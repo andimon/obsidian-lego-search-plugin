@@ -1,12 +1,11 @@
-import { Book } from '@models/book.model';
-import { BookSearchPluginSettings } from '@settings/settings';
+import { LegoSet } from '@models/lego.model';
+import { LegoSearchPluginSettings } from '@settings/settings';
 import { ServiceProvider } from '@src/constants';
 import { requestUrl } from 'obsidian';
-import { GoogleBooksApi } from './google_books_api';
-import { NaverBooksApi } from './naver_books_api';
+import { RebrickableApi } from './rebrickable_api';
 
-export interface BaseBooksApiImpl {
-  getByQuery(query: string, options?: Record<string, string>): Promise<Book[]>;
+export interface BaseLegoApiImpl {
+  getByQuery(query: string, options?: Record<string, string>): Promise<LegoSet[]>;
 }
 
 class ConfigurationError extends Error {
@@ -16,21 +15,19 @@ class ConfigurationError extends Error {
   }
 }
 
-export function factoryServiceProvider(settings: BookSearchPluginSettings): BaseBooksApiImpl {
+export function factoryServiceProvider(settings: LegoSearchPluginSettings): BaseLegoApiImpl {
   switch (settings.serviceProvider) {
-    case ServiceProvider.google:
-      return new GoogleBooksApi(settings.localePreference, settings.enableCoverImageEdgeCurl, settings.apiKey);
-    case ServiceProvider.naver:
-      validateNaverSettings(settings);
-      return new NaverBooksApi(settings.naverClientId, settings.naverClientSecret);
+    case ServiceProvider.rebrickable:
+      validateRebrickableSettings(settings);
+      return new RebrickableApi(settings.rebrickableApiKey);
     default:
       throw new Error('Unsupported service provider.');
   }
 }
 
-function validateNaverSettings(settings: BookSearchPluginSettings): void {
-  if (!settings.naverClientId || !settings.naverClientSecret) {
-    throw new ConfigurationError('네이버 개발자센터에서 "Client ID"와 "Client Secret"를 발급받아 설정해주세요.');
+function validateRebrickableSettings(settings: LegoSearchPluginSettings): void {
+  if (!settings.rebrickableApiKey) {
+    throw new ConfigurationError('Please provide a Rebrickable API key. Get one free at https://rebrickable.com/api/');
   }
 }
 
